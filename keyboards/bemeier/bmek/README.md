@@ -1,12 +1,13 @@
 # BMEK - Bemeier Ergonomic Keyboard
 
-![BMEK](https://i.imgur.com/odvl8UO.png)
+![BMEK](https://i.imgur.com/ZM27uPo.jpg)
 
 BMEK is a HHKB-like version of TGR Alice.
-PCB and case design files are publicly available.
+PCB and case design files are open source.
 
 Maintainer: [Bemeier](https://github.com/Bemeier)  
-Hardware: [BMEK Hardware](https://github.com/Bemeier/bmek)
+PCB & Case [BMEK Hardware](https://github.com/Bemeier/bmek)
+Firmware: [Release](https://github.com/qmk/qmk_firmware/tree/master/keyboards/bemeier/bmek), [Dev](https://github.com/Bemeier/qmk_firmware/tree/bemeier/keyboards/bemeier/bmek)
 
 Make example for this keyboard (after setting up your build environment):
 
