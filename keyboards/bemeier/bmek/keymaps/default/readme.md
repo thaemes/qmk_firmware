@@ -1,1 +1,1 @@
-# The default keymap for bemeier
+# The default keymap for Bemeier BMEK
