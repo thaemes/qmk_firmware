@@ -41,7 +41,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *                  ROW2COL = ROW = Anode (+), COL = Cathode (-, marked on diode)
  *
  */
-// V2:
 #define MATRIX_ROW_PINS \
         { B4, B5, D7, F5, F4 }
 // V1:    { B7, B4, B6, D7, D4 }
@@ -65,7 +64,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define RGB_DI_PIN E6
 #ifdef RGB_DI_PIN
-   #define RGBLED_NUM 8
+   #define RGBLED_NUM 6
    #define RGBLIGHT_HUE_STEP 8
    #define RGBLIGHT_SAT_STEP 8
    #define RGBLIGHT_VAL_STEP 8
@@ -126,7 +125,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * power-up.
  *
  */
-//#define FORCE_NKRO
+#define FORCE_NKRO
 
 /*
  * Magic Key Options

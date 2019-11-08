@@ -17,6 +17,22 @@
 
 #include "quantum.h"
 
+
+enum bm_keycodes {
+  BM_OS = SAFE_RANGE,
+  BM_RST,
+  BM_WIPE,
+  BM_HI_1,
+  BM_HI_2,
+  BM_HI_3,
+  BM_HI_4,
+  BM_HD_1,
+  BM_HD_2,
+  BM_HD_3,
+  BM_HD_4,
+  BM_SAFE_RANGE
+};
+
 #define LAYOUT(\
     KC_40, KC_41, KC_42, KC_43, KC_44, KC_45, KC_46, KC_47,     KC_48, KC_49, KC_4A, KC_4B, KC_4C, KC_4D, KC_4E, KC_3E,\
    KC_30,  KC_31,  KC_32, KC_33, KC_34, KC_35, KC_36,         KC_37, KC_38, KC_39, KC_3A, KC_3B, KC_3C, KC_3D,    KC_2E,\
