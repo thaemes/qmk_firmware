@@ -15,8 +15,23 @@
  */
 #pragma once
 
+#define BMLED_SMOOTH_NVALS 3
+#define BMLED_SMOOTH_INTERVAL 20 
+
 #include "quantum.h"
 
+typedef union {
+  struct {
+    uint32_t raw_kb;
+    uint32_t raw_user;
+  };
+  struct {
+    uint8_t layer_hues[4];
+    uint8_t brightness;
+    uint8_t saturation;
+	uint8_t fade_span;
+  };
+} kb_config_t;
 
 enum bm_keycodes {
   BM_OS = SAFE_RANGE,
@@ -30,6 +45,12 @@ enum bm_keycodes {
   BM_HD_2,
   BM_HD_3,
   BM_HD_4,
+  BM_SI,
+  BM_SD,
+  BM_BI,
+  BM_BD,
+  BM_FI,
+  BM_FD,
   BM_SAFE_RANGE
 };
 

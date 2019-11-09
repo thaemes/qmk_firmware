@@ -15,171 +15,146 @@
  */
 
 #include "bmek.h"
-#include "../bmstatus.h"
+#include "../bmledlib.h"
 
-typedef union {
-  uint32_t raw;
-  struct {
-    uint8_t layer_hues[4];
-  };
-} kb_config_t;
-
+void bm_update_led_indicators(void);
 kb_config_t kb_config;
 
-
+// Smooth LED transitions
 enum bmled_smooth_vals {
-  total_brightness = 0,
-  total_sat,
-  layer_hue
+  smooth_brightness = 0,
+  smooth_saturation,
+  smooth_layer_hue
 };
 
+// Idle Timers
 static bool idle = false;
-static uint16_t idle_timer;
-static uint16_t idle_timeout = 30000;
+static uint32_t idle_timer;
+static uint32_t idle_timeout = 60000;
 
+// Config
 static bool settings_dirty = false;
 static uint8_t cfg_layer_idx = 0;
 
-// TODO: move to eeprom
-static uint16_t default_saturation = 245;
-static uint16_t default_brightness = 220;
-static uint16_t cutoff_brightness = 5;
-
-
-void eeconfig_init_kb(void) {  // EEPROM is getting reset!
-  kb_config.raw = 0;
+void eeconfig_init_kb(void) {
+  kb_config.raw_kb = 0;
+  kb_config.raw_user = 0;
   kb_config.layer_hues[0] = 100;
   kb_config.layer_hues[1] = 120;
   kb_config.layer_hues[2] = 180;
   kb_config.layer_hues[3] = 210;
-  eeconfig_update_kb(kb_config.raw); // Write default value to EEPROM now
+  kb_config.brightness = 255;
+  kb_config.saturation = 255;
+  kb_config.fade_span = 25;
+  eeconfig_update_kb(kb_config.raw_kb);
+  eeconfig_update_user(kb_config.raw_user);
 }
 
-
 void matrix_init_kb(void) {
-  // idle timer
-  kb_config.raw = eeconfig_read_kb();
-  idle_timer = timer_read();
+  // idle timer (turns of lights after idle_timeout ms)
+  kb_config.raw_kb = eeconfig_read_kb();
+  kb_config.raw_user = eeconfig_read_user();
+  idle_timer = timer_read32();
+
   // Setup smoothing engine
-  bmled_smooth_init(total_brightness, cutoff_brightness, default_brightness, cutoff_brightness, 255, 0.1);
-  bmled_smooth_init(total_sat, 0, default_saturation, 0, 255, 0.2);
-  bmled_smooth_init(layer_hue, 0, kb_config.layer_hues[eeconfig_read_default_layer()], 1, 255, 0.25);
+  bmled_smooth_init(smooth_brightness, 0, kb_config.brightness, 0, 255, 0.2, false);
+  bmled_smooth_init(smooth_saturation, 0, kb_config.saturation, 0, 255, 0.3, false);
+  bmled_smooth_init(smooth_layer_hue, 0, kb_config.layer_hues[eeconfig_read_default_layer()], 1, 255, 0.25, true);
+  rgblight_enable_noeeprom();
   return matrix_init_user();
 }
 
-
-layer_state_t default_layer_state_set_kb(layer_state_t state) {
-  return default_layer_state_set_user(state);
-}
-
-
-layer_state_t layer_state_set_kb(layer_state_t state) {
-  return layer_state_set_user(state);
-}
-
 void matrix_scan_kb(void) {
-  layer_state_t hl = get_highest_layer(layer_state);
-  layer_state_t hdl = get_highest_layer(default_layer_state);
-  if (hl > hdl && hl <= 3) {
-    bmled_smooth_set_target(layer_hue, kb_config.layer_hues[hl]);
-  } else if (hdl <= 3 && hl < 3) {
-    bmled_smooth_set_target(layer_hue, kb_config.layer_hues[hdl]);
-    if (settings_dirty) {
-      settings_dirty = false;
-      eeconfig_update_kb(kb_config.raw);
-    }
-  } else {
-    bmled_set(layer_hue, kb_config.layer_hues[cfg_layer_idx]);
-  }
-
-  if (bmled_smooth_update()) {
-    rgblight_sethsv(bmled_get_val(layer_hue), bmled_get_val(total_sat), bmled_get_val(total_brightness));
-
-    if (!idle && bmled_get_val(total_brightness) <= cutoff_brightness && bmled_get_target(total_brightness) <= cutoff_brightness) {
-        idle = true;
-        rgblight_disable_noeeprom();
-    }
-  }
-
-  if (!idle && timer_elapsed(idle_timer) > idle_timeout) {
-    bmled_smooth_set_target(total_brightness, cutoff_brightness);
-  }
-
+  bm_update_led_indicators();
   return matrix_scan_user();
 }
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
-  if (timer_elapsed(idle_timer) >= idle_timeout) {
-    if (idle) {
-        rgblight_enable_noeeprom();
-        bmled_set(total_brightness, cutoff_brightness);
-    }
+  // Wake up from idle on keypress, re-enable lights and reset timer
+  if (idle || timer_elapsed32(idle_timer) >= idle_timeout) {
+    if (idle) rgblight_enable_noeeprom();
     idle = false;
-    idle_timer = timer_read();
-    bmled_smooth_set_target(total_brightness, default_brightness);
-    bmled_smooth_set_target(total_sat, 255);
+    idle_timer = timer_read32();
   }
 
-
+  // Config keycodes
   switch (keycode) {
-    case BM_WIPE:
+    case BM_RST: // RESET KEYBOARD
+      if (record->event.pressed) break;
+      rgblight_sethsv(250, 255, 50);
+      reset_keyboard();
+      break;
+    case BM_WIPE: // RESET EEPROM
       if (record->event.pressed) break;
       eeconfig_init();
       break;
-    case BM_RST:
-      if (record->event.pressed) break;
-      rgblight_sethsv(3, 255, 255);
-      reset_keyboard();
+	case BM_HI_1 ... BM_HD_4: // SET LAYER COLORS
+      settings_dirty = true;
+      int delta = 1;
+      cfg_layer_idx = keycode - BM_HI_1;
+      if (keycode > BM_HI_4) {
+        delta = -delta;
+        cfg_layer_idx = keycode - BM_HD_1;
+      }
+      int new_val = kb_config.layer_hues[cfg_layer_idx] + delta;
+      if (new_val > 255) new_val = 0;
+      if (new_val < 0) new_val = 255;
+      kb_config.layer_hues[cfg_layer_idx] = new_val;
+      break;
+    case BM_SI ... BM_FD: // BRIGHTNESS, SATURATION & INDICATOR FADE
+	  settings_dirty = true;
+	  int delta_sb = 3;
+      if (keycode == BM_BI) bmled_smooth_add_target(smooth_brightness,  delta_sb);
+      if (keycode == BM_BD) bmled_smooth_add_target(smooth_brightness, -delta_sb);
+      if (keycode == BM_SI) bmled_smooth_add_target(smooth_saturation,  delta_sb);
+      if (keycode == BM_SD) bmled_smooth_add_target(smooth_saturation, -delta_sb);
+      kb_config.brightness = bmled_get_target(smooth_brightness);
+      kb_config.saturation = bmled_get_target(smooth_saturation);
+      if (keycode == BM_FI) kb_config.fade_span += 2;
+      if (keycode == BM_FD) kb_config.fade_span -= 2;
+	  kb_config.fade_span = (uint8_t) fmax(fmin(kb_config.fade_span, 92), 0);
+	  break;
   }
 
-  if (keycode >= BM_HI_1 && keycode <= BM_HD_4) {
-    settings_dirty = true;
-    int delta = 3;
-    cfg_layer_idx = keycode - BM_HI_1;
-    if (keycode > BM_HI_4) {
-      delta = -delta;
-      cfg_layer_idx = keycode - BM_HD_1;
+  return process_record_user(keycode, record);
+}
+
+void bm_update_led_indicators(void) {
+  // get the highest active (default) layer to set the color indicator...
+  layer_state_t hl = get_highest_layer(layer_state);
+  layer_state_t hdl = get_highest_layer(default_layer_state);
+  if (hl > hdl && hl <= 3) { // only first 4 layers supported since we cant store more than 4 bytes of hue data in eeprom easily(?)
+    bmled_smooth_set_target(smooth_layer_hue, kb_config.layer_hues[hl]);
+  } else if (hdl <= 3 && hl < 3) {
+    bmled_smooth_set_target(smooth_layer_hue, kb_config.layer_hues[hdl]);
+    if (settings_dirty) {
+      settings_dirty = false;
+      eeconfig_update_kb(kb_config.raw_kb);
+      eeconfig_update_user(kb_config.raw_user);
     }
-    int new_val = kb_config.layer_hues[cfg_layer_idx] + delta;
-    if (new_val > 255) new_val = 0;
-    if (new_val < 0) new_val = 255;
-    kb_config.layer_hues[cfg_layer_idx] = new_val;
+  } else { // If on a higher layer, we assume it's the config layer and instead we show the currently configured hue:
+    bmled_set(smooth_layer_hue, kb_config.layer_hues[cfg_layer_idx]);
   }
 
-  return process_record_user(keycode, record);
+  if (bmled_smooth_update()) {
+	uint8_t current_hue = bmled_get_val(smooth_layer_hue);
+	for (int i = 0; i < RGBLED_NUM/2; i++) {
+		uint8_t this_hue = current_hue + kb_config.fade_span * i/(RGBLED_NUM/2) % 255;
+    	rgblight_sethsv_at(this_hue, bmled_get_val(smooth_saturation), bmled_get_val(smooth_brightness), i);
+    	rgblight_sethsv_at(this_hue, bmled_get_val(smooth_saturation), bmled_get_val(smooth_brightness), i+3);
+	}
+
+
+    if (!idle && timer_elapsed32(idle_timer) >= idle_timeout) {
+		// fade out when the timer is reached:
+        bmled_smooth_set_target(smooth_brightness, 0);
+		// turn of led's completely after fade is complete:
+		if (bmled_get_val(smooth_brightness) <= 1) {
+          rgblight_disable_noeeprom();
+          idle = true;
+        }
+    } else if (!idle) {
+      bmled_smooth_set_target(smooth_brightness, kb_config.brightness);
+    }
+  }
 }
-
-// Optional override functions below.
-// You can leave any or all of these undefined.
-// These are only required if you want to perform custom actions.
-
-/*
-
-void matrix_init_kb(void) {
-  // put your keyboard start-up code here
-  // runs once when the firmware starts up
-
-  matrix_init_user();
-}
-
-void matrix_scan_kb(void) {
-  // put your looping keyboard code here
-  // runs every cycle (a lot)
-
-  matrix_scan_user();
-}
-
-bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
-  // put your per-action keyboard code here
-  // runs for every action, just before processing by the firmware
-
-  return process_record_user(keycode, record);
-}
-
-void led_set_kb(uint8_t usb_led) {
-  // put your keyboard LED indicator (ex: Caps Lock LED) toggling code here
-
-  led_set_user(usb_led);
-}
-
-*/

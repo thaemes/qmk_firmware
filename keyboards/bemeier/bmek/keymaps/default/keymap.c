@@ -22,7 +22,7 @@ enum layers_idx {
     _WL,    // Windows Modifiers Layer (Switched around LGUI, LALT, LCTL)
     _FL,   // Function Layer
     _EL,  // Emoji Layer
-    _SL  // Keyboard Settings Layer
+    _CL  // Keyboard Config Layer
 };
 
 enum custom_keycodes {
@@ -35,31 +35,45 @@ enum unicode_names {
     SNEK
 };
 
+// Testwise unicode support for emoticon layer.
+// To get this even close to working on macOS,
+// I have to activate the "Unicode Input Source"
+// in the system settings and activate it (CTRL+Space)
 const uint32_t PROGMEM unicode_map[] = {
     [BANG]  = 0x203D,  // ‽
     [IRNY] = 0x2E2E,  // ⸮
     [SNEK]  = 0x1F40D, // 🐍
 };
 
+
+// Space hold function layer
 #define FN_SPC LT(_FL, KC_SPC)
+
+// Workspace switching macOS
 #define CC_UP LCTL(KC_UP)
 #define CC_LEFT LCTL(KC_LEFT)
-#define CC_RGHT LCTL(KC_RIGHT)
+#define CC_RGHT LCTL(KC_RGHT)
 #define CC_DOWN LCTL(KC_DOWN)
+
+// Workspace switching Windows
+#define WC_UP LGUI(LCTL(KC_UP))
+#define WC_LEFT LGUI(LCTL(KC_LEFT))
+#define WC_RGHT LGUI(LCTL(KC_RGHT))
+#define WC_DOWN LGUI(LCTL(KC_DOWN))
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
    [_BL] = LAYOUT(\
   KC_ESC,  KC_GRV,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,     KC_7,    KC_8,    KC_9,    KC_0, KC_MINS,  KC_EQL, KC_BSLS,  KC_DEL, \
-   CC_UP,  KC_TAB,      KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,          KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, KC_LBRC, KC_RBRC,   KC_BSPC, \
- CC_DOWN, KC_LGUI,       KC_A,    KC_S,    KC_D,    KC_F,    KC_G,          KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,            KC_ENT, \
- CC_LEFT, KC_LSFT,      KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,         KC_B,    KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_RSFT,   CC_RGHT, \
+  KC_ESC,  KC_TAB,      KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,          KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, KC_LBRC, KC_RBRC,   KC_BSPC, \
+  KC_ESC, KC_LGUI,       KC_A,    KC_S,    KC_D,    KC_F,    KC_G,          KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,            KC_ENT, \
+  KC_ESC, KC_LSFT,      KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,         KC_B,    KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_RSFT,   MO(_FL), \
                      KC_LALT, KC_LCTL,           KC_SPC,                         FN_SPC,          KC_RCTL, KC_RALT \
 ), 
    [_WL] = LAYOUT(\
  _______, _______, _______, _______, _______, _______, _______, _______,  _______, _______, _______, _______, _______, _______, _______, _______, \
- _______, _______,   _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______, _______,   _______, \
- _______, KC_LCTL,    _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______,           _______, \
- _______, _______,   _______, _______, _______, _______, _______,      _______, _______, _______, _______, _______, _______,  _______,   _______, \
+   WC_UP, _______,   _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______, _______,   _______, \
+ WC_DOWN, KC_LCTL,    _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______,           _______, \
+ WC_LEFT, _______,   _______, _______, _______, _______, _______,      _______, _______, _______, _______, _______, _______,  _______,   WC_RGHT, \
                      KC_LGUI, KC_LALT,          _______,                        _______,          KC_RALT, KC_RGUI \
 ), 
    [_FL] = LAYOUT(\
@@ -67,23 +81,25 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  _______, _______,   _______,   KC_UP, _______, _______, _______,       _______, _______, _______, _______, _______, _______, _______,   _______, \
  _______, _______,    KC_LEFT, KC_DOWN, KC_RGHT, _______, _______,       KC_LEFT, KC_DOWN,   KC_UP, KC_RGHT, _______, _______,           _______, \
  _______, _______,   _______, _______, _______, _______, _______,       TOG_OS, _______, _______, _______, _______, _______,  _______,   _______, \
-                     _______, _______,          MO(_SL),                        _______,          _______, _______ \
+                     _______, _______,          MO(_CL),                        _______,          _______, _______ \
 ), 
    [_EL] = LAYOUT(\
- XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______, \
+ XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, \
  XXXXXXX, XXXXXXX,   X(BANG), X(SNEK), X(IRNY), XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,   XXXXXXX, \
  XXXXXXX, XXXXXXX,    XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,           XXXXXXX, \
  XXXXXXX, XXXXXXX,   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX,   XXXXXXX, \
                      XXXXXXX, XXXXXXX,          _______,                        _______,          XXXXXXX, XXXXXXX \
 ), 
-   [_SL] = LAYOUT(\
- BM_WIPE, XXXXXXX, BM_HI_1, BM_HI_2, BM_HI_3, BM_HI_4, XXXXXXX, XXXXXXX,  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, UC_M_OS, \
- XXXXXXX, XXXXXXX,   BM_HD_1, BM_HD_2, BM_HD_3, BM_HD_4, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,   XXXXXXX, \
+   [_CL] = LAYOUT(\
+ BM_WIPE, XXXXXXX, BM_HI_1, BM_HI_2, BM_HI_3, BM_HI_4, XXXXXXX, XXXXXXX,    BM_SI,   BM_BI,   BM_FI, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  UC_MOD, \
+ XXXXXXX, XXXXXXX,   BM_HD_1, BM_HD_2, BM_HD_3, BM_HD_4, XXXXXXX,         BM_SD,   BM_BD,   BM_FD, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,   XXXXXXX, \
  XXXXXXX, XXXXXXX,    XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,           XXXXXXX, \
  XXXXXXX, XXXXXXX,   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX,   XXXXXXX, \
                      XXXXXXX, XXXXXXX,          _______,                        _______,          XXXXXXX, XXXXXXX \
 ) };
 
+// Handling default layers is done here in the _user function.
+// In the _kb functions (see bmek.c) the BM_ keycodes are handled.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
       case TOG_OS: 
@@ -99,10 +115,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       break;
     }
-
     return true;
 }
 
 void matrix_init_user(void) {}
-
 void matrix_scan_user(void) {}

@@ -15,8 +15,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// TODO: expand on this with an easy lib to be included in keymaps.
 // This may belong to the "/user" space...
+
 #pragma once
 
 #ifndef BMLED_SMOOTH_NVALS
@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 typedef struct {
+    bool wrap_around_fade;
     float current_value;
     float target_value;
     float max_value;
@@ -38,16 +39,17 @@ typedef struct {
 static uint16_t bmled_smooth_last_update;
 
 uint8_t bmled_get_val(uint8_t val);
-void bmled_smooth_init(uint8_t val, uint8_t start_val, uint8_t start_target, uint8_t min, uint8_t max, float param);
+void bmled_smooth_init(uint8_t val, uint8_t start_val, uint8_t start_target, uint8_t min, uint8_t max, float param, bool wrap);
 void bmled_smooth_add_target(uint8_t val, int add);
 void bmled_smooth_set_target(uint8_t val, uint8_t target);
 void bmled_set(uint8_t val, uint8_t target);
+float bmled_get_dist(uint8_t val);
 bool bmled_smooth_update(void);
 
 bmled_smooth bmled_smooth_vals[BMLED_SMOOTH_NVALS];
 
 // Initialize a smooth value
-void bmled_smooth_init(uint8_t val, uint8_t start_val, uint8_t start_target, uint8_t min, uint8_t max, float param) {
+void bmled_smooth_init(uint8_t val, uint8_t start_val, uint8_t start_target, uint8_t min, uint8_t max, float param, bool wrap) {
   if (val >= BMLED_SMOOTH_NVALS) return;
   bmled_smooth_last_update = timer_read();
   bmled_smooth_vals[val].current_value = (float) start_val;
@@ -55,6 +57,7 @@ void bmled_smooth_init(uint8_t val, uint8_t start_val, uint8_t start_target, uin
   bmled_smooth_vals[val].min_value = (float) min;
   bmled_smooth_vals[val].max_value = (float) max;
   bmled_smooth_vals[val].smooth_param = param;
+  bmled_smooth_vals[val].wrap_around_fade = wrap;
 }
 
 // update all smoothed values
@@ -62,16 +65,18 @@ bool bmled_smooth_update(void) {
   if (timer_elapsed(bmled_smooth_last_update) > BMLED_SMOOTH_INTERVAL) {
     bmled_smooth_last_update = timer_read();
     for (uint8_t valIdx = 0; valIdx < BMLED_SMOOTH_NVALS; valIdx++) {
-              //bmled_smooth_vals[valIdx].current_value * (1.0-sig) +
-        /*
-      float delta_val = bmled_smooth_vals[valIdx].current_value - bmled_smooth_vals[valIdx].target_value;
-      if (delta_val > 0) bmled_smooth_vals[valIdx].current_value -= bmled_smooth_vals[valIdx].smooth_param;
-      if (delta_val < 0) bmled_smooth_vals[valIdx].current_value += bmled_smooth_vals[valIdx].smooth_param;
-      float delta_val = bmled_smooth_vals[valIdx].current_value - bmled_smooth_vals[valIdx].target_value;
-                                                */
-      float sig = bmled_smooth_vals[valIdx].smooth_param;// / (delta_val / (1 + delta_val));
-      bmled_smooth_vals[valIdx].current_value = bmled_smooth_vals[valIdx].current_value * (1.0-sig) +
-                                                bmled_smooth_vals[valIdx].target_value  *      sig;
+	  float dist = bmled_get_dist(valIdx);
+	  if (fabs(dist) <= 1.25) continue;
+      float change = bmled_smooth_vals[valIdx].smooth_param * dist;
+      float magnitude = fmin(fmax(fabs(change), 0.2), 6.0);
+	  change = magnitude * change/fabs(change);
+      bmled_smooth_vals[valIdx].current_value = bmled_smooth_vals[valIdx].current_value - change;
+      if (bmled_smooth_vals[valIdx].current_value > bmled_smooth_vals[valIdx].max_value) {
+		bmled_smooth_vals[valIdx].current_value = bmled_smooth_vals[valIdx].current_value - bmled_smooth_vals[valIdx].max_value;
+	  }
+	  if (bmled_smooth_vals[valIdx].current_value < bmled_smooth_vals[valIdx].min_value) {
+		bmled_smooth_vals[valIdx].current_value = bmled_smooth_vals[valIdx].max_value - bmled_smooth_vals[valIdx].current_value;
+	  }
     }
     return true;
   }
@@ -104,6 +109,15 @@ void bmled_smooth_set_target(uint8_t val, uint8_t target) {
 uint8_t bmled_get_target(uint8_t val) {
   if (val >= BMLED_SMOOTH_NVALS) return 0;
   return (uint8_t) bmled_smooth_vals[val].target_value;
+}
+
+float bmled_get_dist(uint8_t val) {
+  if (val >= BMLED_SMOOTH_NVALS) return 0;
+  int delta = bmled_smooth_vals[val].current_value-bmled_smooth_vals[val].target_value;
+  if (bmled_smooth_vals[val].wrap_around_fade && bmled_smooth_vals[val].max_value/2.0 < fabs(delta)) {
+    return -(bmled_smooth_vals[val].max_value * delta/fabs(delta) - delta);
+  }
+  return delta;
 }
 
 uint8_t bmled_get_val(uint8_t val) {
