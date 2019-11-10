@@ -30,7 +30,8 @@ enum bmled_smooth_vals {
 // Idle Timers
 static bool idle = false;
 static uint32_t idle_timer;
-static uint32_t idle_timeout = 60000;
+// TODO: make this configurable from keymap/rules.mk?
+static uint32_t idle_timeout = 120000;
 
 // Config
 static bool settings_dirty = false;
@@ -103,15 +104,15 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
       break;
     case BM_SI ... BM_FD: // BRIGHTNESS, SATURATION & INDICATOR FADE
 	  settings_dirty = true;
-	  int delta_sb = 3;
+	  int delta_sb = 2;
       if (keycode == BM_BI) bmled_smooth_add_target(smooth_brightness,  delta_sb);
       if (keycode == BM_BD) bmled_smooth_add_target(smooth_brightness, -delta_sb);
       if (keycode == BM_SI) bmled_smooth_add_target(smooth_saturation,  delta_sb);
       if (keycode == BM_SD) bmled_smooth_add_target(smooth_saturation, -delta_sb);
       kb_config.brightness = bmled_get_target(smooth_brightness);
       kb_config.saturation = bmled_get_target(smooth_saturation);
-      if (keycode == BM_FI) kb_config.fade_span += 2;
-      if (keycode == BM_FD) kb_config.fade_span -= 2;
+      if (keycode == BM_FI) kb_config.fade_span += delta_sb;
+      if (keycode == BM_FD) kb_config.fade_span -= delta_sb;
 	  kb_config.fade_span = (uint8_t) fmax(fmin(kb_config.fade_span, 92), 0);
 	  break;
   }
