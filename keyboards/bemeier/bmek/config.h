@@ -57,3 +57,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TAPPING_TERM 100
 
 #define FORCE_NKRO
+
+#define DYNAMIC_MACRO_NO_NESTING

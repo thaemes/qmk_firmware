@@ -74,20 +74,19 @@ void matrix_scan_kb(void) {
 }
 
 void dynamic_macro_record_start_user(void) {
-	recording = true;
+  recording = true;
 }
 
-void dynamic_macro_record_key_user(int8_t direction, keyrecord_t *record) {
+void dynamic_macro_record_key_user(int8_t dir, keyrecord_t *record) {
+  bmled_smooth_add_target(smooth_saturation, -255);
 }
 
 void dynamic_macro_record_end_user(int8_t dir) {
-	recording = false;
+  recording = false;
 }
 
 void dynamic_macro_play_user(int8_t dir) {
 }
-
-
 
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
   // Wake up from idle on keypress, re-enable lights and reset timer
@@ -122,7 +121,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
     case BM_SI ... BM_FD: // BRIGHTNESS, SATURATION & INDICATOR FADE
 	  settings_dirty = true;
 	  int delta_sb = 2;
-      if (keycode == BM_BI) bmled_smooth_add_target(smooth_brightness, delta_sb);
+      if (keycode == BM_BI) bmled_smooth_add_target(smooth_brightness,  delta_sb);
       if (keycode == BM_BD) bmled_smooth_add_target(smooth_brightness, -delta_sb);
       if (keycode == BM_SI) bmled_smooth_add_target(smooth_saturation,  delta_sb);
       if (keycode == BM_SD) bmled_smooth_add_target(smooth_saturation, -delta_sb);
@@ -145,8 +144,10 @@ void bm_update_led_indicators(void) {
 	// Do nothing, target is updated below...
   } else if (hl > hdl && hl <= 3) { // only first 4 layers supported since we cant store more than 4 bytes of hue data in eeprom easily(?)
     bmled_smooth_set_target(smooth_layer_hue, kb_config.layer_hues[hl]);
+    bmled_smooth_set_target(smooth_saturation, kb_config.saturation);
   } else if (hdl <= 3 && hl < 3) {
     bmled_smooth_set_target(smooth_layer_hue, kb_config.layer_hues[hdl]);
+    bmled_smooth_set_target(smooth_saturation, kb_config.saturation);
     if (settings_dirty) {
       settings_dirty = false;
       eeconfig_update_kb(kb_config.raw_kb);
@@ -154,6 +155,7 @@ void bm_update_led_indicators(void) {
     }
   } else { // If on a higher layer, we assume it's the config layer and instead we show the currently configured hue:
     bmled_set(smooth_layer_hue, kb_config.layer_hues[cfg_layer_idx]);
+    bmled_set(smooth_saturation, kb_config.saturation);
   }
 
   if (bmled_smooth_update()) {
@@ -161,11 +163,12 @@ void bm_update_led_indicators(void) {
 	if (recording) {
 	  bmled_smooth_add_target(smooth_layer_hue, 7);
 	  span = 64;
-    }
+    } 
+
 	uint8_t current_hue = bmled_get_val(smooth_layer_hue);
     int half_leds = RGBLED_NUM/2;
 	for (int i = 0; i < half_leds; i++) {
-		uint8_t this_hue = current_hue + span * i/(RGBLED_NUM/2) % 255;
+		uint8_t this_hue = current_hue - span * i/(RGBLED_NUM/2) % 255;
     	rgblight_sethsv_at(this_hue, bmled_get_val(smooth_saturation), bmled_get_val(smooth_brightness), i);
     	rgblight_sethsv_at(this_hue, bmled_get_val(smooth_saturation), bmled_get_val(smooth_brightness), i+half_leds);
 	}
