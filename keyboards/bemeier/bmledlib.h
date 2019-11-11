@@ -85,10 +85,14 @@ bool bmled_smooth_update(void) {
 
 void bmled_smooth_add_target(uint8_t val, int add) {
   if (val >= BMLED_SMOOTH_NVALS) return;
-  int new_val = bmled_smooth_vals[val].target_value + add;
-  if (new_val > bmled_smooth_vals[val].max_value) bmled_smooth_vals[val].target_value = bmled_smooth_vals[val].max_value;
-  else if (new_val < bmled_smooth_vals[val].min_value) bmled_smooth_vals[val].target_value = bmled_smooth_vals[val].min_value;
-  else bmled_smooth_vals[val].target_value = (float) new_val;
+  float new_val = bmled_smooth_vals[val].target_value + add;
+  if (bmled_smooth_vals[val].wrap_around_fade) {
+    bmled_smooth_vals[val].target_value = fmod(new_val, 255.0);
+  } else {
+    if (new_val > bmled_smooth_vals[val].max_value) bmled_smooth_vals[val].target_value = bmled_smooth_vals[val].max_value;
+    else if (new_val < bmled_smooth_vals[val].min_value) bmled_smooth_vals[val].target_value = bmled_smooth_vals[val].min_value;
+    else bmled_smooth_vals[val].target_value = (float) new_val;
+  }
 }
 
 void bmled_set(uint8_t val, uint8_t target) {

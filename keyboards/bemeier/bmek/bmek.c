@@ -37,6 +37,9 @@ static uint32_t idle_timeout = 120000;
 static bool settings_dirty = false;
 static uint8_t cfg_layer_idx = 0;
 
+// Macros
+static bool recording = false;
+
 void eeconfig_init_kb(void) {
   kb_config.raw_kb = 0;
   kb_config.raw_user = 0;
@@ -70,6 +73,22 @@ void matrix_scan_kb(void) {
   return matrix_scan_user();
 }
 
+void dynamic_macro_record_start_user(void) {
+	recording = true;
+}
+
+void dynamic_macro_record_key_user(int8_t direction, keyrecord_t *record) {
+}
+
+void dynamic_macro_record_end_user(int8_t dir) {
+	recording = false;
+}
+
+void dynamic_macro_play_user(int8_t dir) {
+}
+
+
+
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
   // Wake up from idle on keypress, re-enable lights and reset timer
   if (idle || timer_elapsed32(idle_timer) >= idle_timeout) {
@@ -97,15 +116,13 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
         delta = -delta;
         cfg_layer_idx = keycode - BM_HD_1;
       }
-      int new_val = kb_config.layer_hues[cfg_layer_idx] + delta;
-      if (new_val > 255) new_val = 0;
-      if (new_val < 0) new_val = 255;
+      uint8_t new_val = (kb_config.layer_hues[cfg_layer_idx] + delta) % 255;
       kb_config.layer_hues[cfg_layer_idx] = new_val;
       break;
     case BM_SI ... BM_FD: // BRIGHTNESS, SATURATION & INDICATOR FADE
 	  settings_dirty = true;
 	  int delta_sb = 2;
-      if (keycode == BM_BI) bmled_smooth_add_target(smooth_brightness,  delta_sb);
+      if (keycode == BM_BI) bmled_smooth_add_target(smooth_brightness, delta_sb);
       if (keycode == BM_BD) bmled_smooth_add_target(smooth_brightness, -delta_sb);
       if (keycode == BM_SI) bmled_smooth_add_target(smooth_saturation,  delta_sb);
       if (keycode == BM_SD) bmled_smooth_add_target(smooth_saturation, -delta_sb);
@@ -113,7 +130,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
       kb_config.saturation = bmled_get_target(smooth_saturation);
       if (keycode == BM_FI) kb_config.fade_span += delta_sb;
       if (keycode == BM_FD) kb_config.fade_span -= delta_sb;
-	  kb_config.fade_span = (uint8_t) fmax(fmin(kb_config.fade_span, 92), 0);
+	  kb_config.fade_span = (uint8_t) fmax(fmin(kb_config.fade_span, 169), 0);
 	  break;
   }
 
@@ -124,7 +141,9 @@ void bm_update_led_indicators(void) {
   // get the highest active (default) layer to set the color indicator...
   layer_state_t hl = get_highest_layer(layer_state);
   layer_state_t hdl = get_highest_layer(default_layer_state);
-  if (hl > hdl && hl <= 3) { // only first 4 layers supported since we cant store more than 4 bytes of hue data in eeprom easily(?)
+  if (recording) {
+	// Do nothing, target is updated below...
+  } else if (hl > hdl && hl <= 3) { // only first 4 layers supported since we cant store more than 4 bytes of hue data in eeprom easily(?)
     bmled_smooth_set_target(smooth_layer_hue, kb_config.layer_hues[hl]);
   } else if (hdl <= 3 && hl < 3) {
     bmled_smooth_set_target(smooth_layer_hue, kb_config.layer_hues[hdl]);
@@ -138,11 +157,17 @@ void bm_update_led_indicators(void) {
   }
 
   if (bmled_smooth_update()) {
+    uint8_t span = kb_config.fade_span;
+	if (recording) {
+	  bmled_smooth_add_target(smooth_layer_hue, 7);
+	  span = 64;
+    }
 	uint8_t current_hue = bmled_get_val(smooth_layer_hue);
-	for (int i = 0; i < RGBLED_NUM/2; i++) {
-		uint8_t this_hue = current_hue + kb_config.fade_span * i/(RGBLED_NUM/2) % 255;
+    int half_leds = RGBLED_NUM/2;
+	for (int i = 0; i < half_leds; i++) {
+		uint8_t this_hue = current_hue + span * i/(RGBLED_NUM/2) % 255;
     	rgblight_sethsv_at(this_hue, bmled_get_val(smooth_saturation), bmled_get_val(smooth_brightness), i);
-    	rgblight_sethsv_at(this_hue, bmled_get_val(smooth_saturation), bmled_get_val(smooth_brightness), i+3);
+    	rgblight_sethsv_at(this_hue, bmled_get_val(smooth_saturation), bmled_get_val(smooth_brightness), i+half_leds);
 	}
 
 
