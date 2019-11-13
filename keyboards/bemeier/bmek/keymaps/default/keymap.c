@@ -20,17 +20,26 @@
 enum layers_idx {
     _BL = 0, // Base Layer
     _WL,    // Windows Modifiers Layer (Switched around LGUI, LALT, LCTL)
-    _FL,   // Function Layer
-    _OL,  // OS Layer, switching workspaces, media keys, etc.
+    _MF,   // Function Layer
+    _WF,  // OS Layer, switching workspaces, media keys, etc.
     _CL  // Keyboard Config Layer
 };
 
 enum custom_keycodes {
-    TOG_OS = BM_SAFE_RANGE
+    TOG_OS = BM_SAFE_RANGE,
+    ATAB_I,
+    ATAB_D
 };
 
+static bool is_alt_tab_active = false;
+static uint16_t alt_tab_timer = 0; 
+
 // Space hold function layer
-#define FN_SPC LT(_FL, KC_SPC)
+#define MF_SPC LT(_MF, KC_SPC)
+#define WF_SPC LT(_WF, KC_SPC)
+
+#define MF_B SCMD_T(KC_B) // GUI + SHIFT, or B WHEN TAPPED
+#define WF_B C_S_T(KC_B) // CONTROL + SHIFT, or B WHEN TAPPED
 
 // OS-specific shortucts, macOS
 #define MN_UP LCTL(KC_UP)
@@ -38,47 +47,56 @@ enum custom_keycodes {
 #define MN_RGHT LCTL(KC_RGHT)
 #define MN_DOWN LCTL(KC_DOWN)
 #define MN_SRCH LGUI(KC_SPC)
+#define MN_CESC MT(MOD_LGUI, KC_ESC)
+#define MN_UNDO LGUI(KC_Z)
+#define MN_COPY LGUI(KC_C)
+#define MN_CUT LGUI(KC_X)
+#define MN_PASTE LGUI(KC_V)
 
-// Workspace switching Windows - TODO: How to use these on _OL when base layer is _WL?
 #define WN_UP LGUI(LCTL(KC_UP))
 #define WN_LEFT LGUI(LCTL(KC_LEFT))
 #define WN_RGHT LGUI(LCTL(KC_RGHT))
 #define WN_DOWN LGUI(LCTL(KC_DOWN))
 #define WN_SRCH LGUI(KC_S)
+#define WN_CESC MT(MOD_LCTL, KC_ESC)
+#define WN_UNDO LCTL(KC_Z)
+#define WN_COPY LCTL(KC_C)
+#define WN_CUT LCTL(KC_X)
+#define WN_PASTE LCTL(KC_V)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
    [_BL] = LAYOUT(\
  MN_SRCH,  KC_ESC,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,     KC_7,    KC_8,    KC_9,    KC_0, KC_MINS,  KC_EQL, KC_BSLS,  KC_GRV, \
   KC_DEL,  KC_TAB,      KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,          KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, KC_LBRC, KC_RBRC,   KC_BSPC, \
- DM_PLY1, KC_LGUI,       KC_A,    KC_S,    KC_D,    KC_F,    KC_G,          KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,            KC_ENT, \
- DM_PLY2, KC_LSFT,      KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,      MO(_OL),    KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_RSFT,   MO(_FL), \
-                     KC_LALT, KC_LCTL,           KC_SPC,                         FN_SPC,          KC_RCTL, KC_RALT \
+ DM_PLY1, MN_CESC,       KC_A,    KC_S,    KC_D,    KC_F,    KC_G,          KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,            KC_ENT, \
+ DM_PLY2, KC_LSFT,      KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,         MF_B,    KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_RSFT,   TG(_MF), \
+                     KC_LALT, KC_LCTL,           KC_SPC,                         MF_SPC,          KC_RCTL, KC_RALT \
 ), 
    [_WL] = LAYOUT(\
  WN_SRCH, _______, _______, _______, _______, _______, _______, _______,  _______, _______, _______, _______, _______, _______, _______, _______, \
  _______, _______,   _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______, _______,   _______, \
- _______, KC_LCTL,    _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______,           _______, \
- _______, _______,   _______, _______, _______, _______, _______,      _______, _______, _______, _______, _______, _______,  _______,   _______, \
-                     KC_LGUI, KC_LALT,          _______,                        _______,          KC_RALT, KC_RGUI \
+ _______, WN_CESC,    _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______,           _______, \
+ _______, _______,   _______, _______, _______, _______, _______,         WF_B, _______, _______, _______, _______, _______,  _______,   TG(_WF), \
+                     KC_LGUI, KC_LALT,          _______,                         WF_SPC,          KC_RALT, KC_RGUI \
 ), 
-   [_FL] = LAYOUT(\
- _______, _______,   KC_F1,  KC_F2,    KC_F4,   KC_F4,   KC_F5,   KC_F6,    KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,  KC_F12,  KC_INS,  KC_DEL, \
- _______, _______,   XXXXXXX,   KC_UP, XXXXXXX, XXXXXXX, XXXXXXX,       KC_PGUP, KC_HOME,   KC_UP,  KC_END, XXXXXXX, KC_UP,   XXXXXXX,   _______, \
- DM_REC1, _______,    KC_LEFT, KC_DOWN, KC_RGHT, XXXXXXX, XXXXXXX,       KC_PGDN, KC_LEFT, KC_DOWN, KC_RGHT, KC_LEFT, KC_RGHT,           _______, \
- DM_REC2, _______,   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,      _______, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_DOWN,  _______,   _______, \
+   [_MF] = LAYOUT(\
+  KC_PWR, _______,   KC_F1,  KC_F2,    KC_F4,   KC_F4,   KC_F5,   KC_F6,    KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,  KC_F12,  KC_INS,  KC_DEL, \
+ _______, _______,   XXXXXXX, KC_END,    KC_UP, KC_HOME, KC_PGUP,       KC_PGUP, KC_HOME,   KC_UP,  KC_END, KC_MPLY, KC_MPRV, KC_MNXT,   _______, \
+ DM_REC1, _______,   XXXXXXX,  KC_LEFT, KC_DOWN, KC_RGHT, KC_PGDN,       KC_PGDN, KC_LEFT, KC_DOWN, KC_RGHT, KC_VOLU, KC_VOLD,           _______, \
+ DM_REC2, _______,   MN_UNDO,  MN_CUT, MN_COPY, MN_PASTE,  ATAB_D,       ATAB_I, MN_UP,   MN_DOWN, MN_LEFT, MN_RGHT, KC_MUTE, _______,   _______, \
                      _______, _______,          MO(_CL),                        _______,          _______, _______ \
 ), 
-   [_OL] = LAYOUT(\
- KC_PWR,  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, \
- KC_SLEP, _______,   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,   XXXXXXX, \
- KC_WAKE, _______,    KC_VOLU, KC_VOLD, KC_MUTE, KC_EJCT, XXXXXXX,         MN_UP, MN_DOWN, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,           XXXXXXX, \
- _______, _______,   KC_MPLY, KC_MPRV, KC_MNXT, XXXXXXX, XXXXXXX,      _______, MN_LEFT, MN_RGHT, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX,   _______, \
-                     XXXXXXX, XXXXXXX,          XXXXXXX,                        _______,          XXXXXXX, XXXXXXX \
+   [_WF] = LAYOUT(\
+  KC_PWR, _______,   KC_F1,  KC_F2,    KC_F4,   KC_F4,   KC_F5,   KC_F6,    KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,  KC_F12,  KC_INS,  KC_DEL, \
+ _______, _______,   XXXXXXX, KC_END,    KC_UP, KC_HOME, KC_PGUP,       KC_PGUP, KC_HOME,   KC_UP,  KC_END, KC_MPLY, KC_MPRV, KC_MNXT,   _______, \
+ DM_REC1, _______,   XXXXXXX,  KC_LEFT, KC_DOWN, KC_RGHT, KC_PGDN,       KC_PGDN, KC_LEFT, KC_DOWN, KC_RGHT, KC_VOLU, KC_VOLD,           _______, \
+ DM_REC2, _______,   WN_UNDO,  WN_CUT, WN_COPY, WN_PASTE,  ATAB_D,       ATAB_I, WN_UP,   WN_DOWN, WN_LEFT, WN_RGHT, KC_MUTE, _______,   _______, \
+                     _______, _______,          MO(_CL),                        _______,          _______, _______ \
 ), 
    [_CL] = LAYOUT(\
   BM_RST,  TOG_OS, BM_HI_1, BM_HI_2, BM_HI_3, BM_HI_4, XXXXXXX, XXXXXXX,    BM_SI,   BM_BI,   BM_FI, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, \
  XXXXXXX, XXXXXXX,   BM_HD_1, BM_HD_2, BM_HD_3, BM_HD_4, XXXXXXX,         BM_SD,   BM_BD,   BM_FD, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,   BM_WIPE, \
- XXXXXXX, XXXXXXX,    XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,           XXXXXXX, \
+ XXXXXXX, XXXXXXX,    XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX,  BM_LED, XXXXXXX, XXXXXXX,           XXXXXXX, \
  XXXXXXX, XXXXXXX,   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX,   _______, \
                      XXXXXXX, XXXXXXX,          _______,                        _______,          XXXXXXX, XXXXXXX \
 ) };
@@ -86,22 +104,52 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 // Handling default layers is done here in the _user function.
 // In the _kb functions (see bmek.c) the BM_ keycodes are handled.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    switch (keycode) {
-      case TOG_OS: 
-        if (record->event.pressed) break;
-      switch (biton32(default_layer_state)) {
-        case _BL:
-          set_single_persistent_default_layer(_WL);
-          return false;
-        case _WL:
-        default:
-          set_single_persistent_default_layer(_BL);
-          return false;
+  switch (keycode) {
+    case ATAB_D: // Handle "alt-tab" behaviour
+    case ATAB_I: // see https://beta.docs.qmk.fm/features/feature_macros#super-alt-tab 
+      if (record->event.pressed) {
+        if (!is_alt_tab_active) {
+          is_alt_tab_active = true;
+          // Use CMD or ALT depending on OS layer
+          switch (biton32(default_layer_state)) {
+            case _BL: register_code(KC_LGUI);
+            case _WL: register_code(KC_LALT);
+          }
+        }
+        alt_tab_timer = timer_read();
+        // Add shift if we cycle backwards.
+        if (keycode == ATAB_D) register_code(KC_LSFT);
+        register_code(KC_TAB);
+      } else {
+        if (keycode == ATAB_D) unregister_code(KC_LSFT);
+        unregister_code(KC_TAB);
       }
-      break;
-    }
-    return true;
+      return true;
+    case TOG_OS: // Toggle macOS/windows modifiers
+      if (record->event.pressed) break;
+      switch (biton32(default_layer_state)) {
+      case _BL:
+        set_single_persistent_default_layer(_WL);
+        return false;
+      case _WL:
+      default:
+        set_single_persistent_default_layer(_BL);
+        return false;
+      }
+    break;
+  }
+  return true;
 }
 
 void matrix_init_user(void) {}
-void matrix_scan_user(void) {}
+
+void matrix_scan_user(void) {
+  // Alt tab behaviour. Need to release the modifier after some time.
+  if (is_alt_tab_active && timer_elapsed(alt_tab_timer) > 500) {
+    is_alt_tab_active = false;
+    switch (biton32(default_layer_state)) {
+      case _BL: unregister_code(KC_LGUI);
+      case _WL: unregister_code(KC_LALT);
+    }
+  }
+}

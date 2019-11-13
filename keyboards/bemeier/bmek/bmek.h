@@ -35,8 +35,8 @@ typedef union {
 } kb_config_t;
 
 enum bm_keycodes {
-  BM_OS = SAFE_RANGE,
-  BM_RST,
+  BM_RST = SAFE_RANGE,
+  BM_LED,
   BM_WIPE,
   BM_HI_1,
   BM_HI_2,

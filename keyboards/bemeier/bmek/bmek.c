@@ -27,6 +27,8 @@ enum bmled_smooth_vals {
   smooth_layer_hue
 };
 
+static bool leds_enabled = true;
+
 // Idle Timers
 static bool idle = false;
 static uint32_t idle_timer;
@@ -91,13 +93,19 @@ void dynamic_macro_play_user(int8_t dir) {
 bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
   // Wake up from idle on keypress, re-enable lights and reset timer
   if (idle || timer_elapsed32(idle_timer) >= idle_timeout) {
-    if (idle) rgblight_enable_noeeprom();
+    if (idle && leds_enabled) rgblight_enable_noeeprom();
     idle = false;
     idle_timer = timer_read32();
   }
 
   // Config keycodes
   switch (keycode) {
+    case BM_LED: // TOGGLE LEDS
+      if (record->event.pressed) break;
+      leds_enabled = !leds_enabled;
+      if (leds_enabled) rgblight_enable_noeeprom();
+      else rgblight_disable_noeeprom();
+      break;
     case BM_RST: // RESET KEYBOARD
       if (record->event.pressed) break;
       rgblight_sethsv(250, 255, 50);
@@ -158,7 +166,7 @@ void bm_update_led_indicators(void) {
     bmled_set(smooth_saturation, kb_config.saturation);
   }
 
-  if (bmled_smooth_update()) {
+  if (leds_enabled && bmled_smooth_update()) {
     uint8_t span = kb_config.fade_span;
 	if (recording) {
 	  bmled_smooth_add_target(smooth_layer_hue, 7);
