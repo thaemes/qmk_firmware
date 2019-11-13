@@ -1,6 +1,6 @@
 # The default keymap for Bemeier BMEK
 
-![KLE Screenshot](https://i.imgur.com/x1qk2s3.png)
+![KLE Screenshot](https://i.imgur.com/muzFPRm.png)
 
 [KLE Link](http://www.keyboard-layout-editor.com/#/gists/a86f8f85d044fc4734a2eea969d33de5)
 
@@ -23,6 +23,7 @@ Keyboard specific (see bmek.h/c):
 - BM_SI/BM_SD: Increase/decrease saturation of LED layer indicator
 
 User/layout specific (see keymap.c):
+- TOG_OS: Toggle between DF (macOS) and WF (Windows) default layer.
 - ATAB_I/ATAB_D: Alt-Tab (or CMD-Tab on macOS) shortcuts for single key application switching.
 - MF_SPC/WF_SPC: Space key when tapped, os-specific function layer when held.
 - MN_B: B key when tapped, CMD+shift when held (macOS - Ctrl+Shift on windows).
