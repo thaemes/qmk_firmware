@@ -66,38 +66,38 @@ static uint16_t alt_tab_timer = 0;
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
    [_BL] = LAYOUT(\
- MN_SRCH,  KC_ESC,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,     KC_7,    KC_8,    KC_9,    KC_0, KC_MINS,  KC_EQL, KC_BSLS,  KC_GRV, \
-  KC_DEL,  KC_TAB,      KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,          KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, KC_LBRC, KC_RBRC,   KC_BSPC, \
- DM_PLY1, MN_CESC,       KC_A,    KC_S,    KC_D,    KC_F,    KC_G,          KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,            KC_ENT, \
- DM_PLY2, KC_LSFT,      KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,         MF_B,    KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_RSFT,   TG(_MF), \
+ DM_PLY1,  KC_ESC,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,     KC_7,    KC_8,    KC_9,    KC_0, KC_MINS,  KC_EQL, KC_BSLS,  KC_GRV, \
+ KC_PGUP,  KC_TAB,      KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,          KC_Y,    KC_U,    KC_I,    KC_O,    KC_P, KC_LBRC, KC_RBRC,   KC_BSPC, \
+ KC_PGDN, KC_LGUI,       KC_A,    KC_S,    KC_D,    KC_F,    KC_G,          KC_H,    KC_J,    KC_K,    KC_L, KC_SCLN, KC_QUOT,            KC_ENT, \
+ MO(_MF), KC_LSFT,      KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,         KC_B,    KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH,  KC_RSFT,   MO(_MF), \
                      KC_LALT, KC_LCTL,           KC_SPC,                         MF_SPC,          KC_RCTL, KC_RALT \
 ), 
    [_WL] = LAYOUT(\
- WN_SRCH, _______, _______, _______, _______, _______, _______, _______,  _______, _______, _______, _______, _______, _______, _______, _______, \
+ _______, _______, _______, _______, _______, _______, _______, _______,  _______, _______, _______, _______, _______, _______, _______, _______, \
  _______, _______,   _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______, _______,   _______, \
- _______, WN_CESC,    _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______,           _______, \
- _______, _______,   _______, _______, _______, _______, _______,         WF_B, _______, _______, _______, _______, _______,  _______,   TG(_WF), \
+ _______, KC_LCTL,    _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______,           _______, \
+ MO(_WF), _______,   _______, _______, _______, _______, _______,      _______, _______, _______, _______, _______, _______,  _______,   MO(_WF), \
                      KC_LGUI, KC_LALT,          _______,                         WF_SPC,          KC_RALT, KC_RGUI \
 ), 
    [_MF] = LAYOUT(\
-  KC_PWR, _______,   KC_F1,  KC_F2,    KC_F4,   KC_F4,   KC_F5,   KC_F6,    KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,  KC_F12,  KC_INS,  KC_DEL, \
- _______, _______,   XXXXXXX, KC_END,    KC_UP, KC_HOME, KC_PGUP,       KC_PGUP, KC_HOME,   KC_UP,  KC_END, KC_MPLY, KC_MPRV, KC_MNXT,   _______, \
- DM_REC1, _______,   XXXXXXX,  KC_LEFT, KC_DOWN, KC_RGHT, KC_PGDN,       KC_PGDN, KC_LEFT, KC_DOWN, KC_RGHT, KC_VOLU, KC_VOLD,           _______, \
- DM_REC2, _______,   MN_UNDO,  MN_CUT, MN_COPY, MN_PASTE,  ATAB_D,       ATAB_I, MN_UP,   MN_DOWN, MN_LEFT, MN_RGHT, KC_MUTE, _______,   _______, \
+ DM_REC1, _______,   KC_F1,  KC_F2,    KC_F4,   KC_F4,   KC_F5,   KC_F6,    KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,  KC_F12,  KC_INS,  KC_DEL, \
+  ATAB_D, _______,   KC_HOME, KC_UP,    KC_END, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_MPLY, KC_MPRV, KC_MNXT,   _______, \
+  ATAB_I, _______,   KC_LEFT,  KC_DOWN, KC_RGHT, XXXXXXX, XXXXXXX,       KC_LEFT, KC_DOWN, KC_UP, KC_RGHT, KC_VOLU, KC_VOLD,             _______, \
+ _______, _______,   MN_UNDO,  MN_CUT, MN_COPY, MN_PASTE, _______,     _______, MN_UP,   MN_DOWN , MN_LEFT, MN_RGHT, KC_MUTE, _______,   _______, \
                      _______, _______,          MO(_CL),                        _______,          _______, _______ \
 ), 
    [_WF] = LAYOUT(\
-  KC_PWR, _______,   KC_F1,  KC_F2,    KC_F4,   KC_F4,   KC_F5,   KC_F6,    KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,  KC_F12,  KC_INS,  KC_DEL, \
- _______, _______,   XXXXXXX, KC_END,    KC_UP, KC_HOME, KC_PGUP,       KC_PGUP, KC_HOME,   KC_UP,  KC_END, KC_MPLY, KC_MPRV, KC_MNXT,   _______, \
- DM_REC1, _______,   XXXXXXX,  KC_LEFT, KC_DOWN, KC_RGHT, KC_PGDN,       KC_PGDN, KC_LEFT, KC_DOWN, KC_RGHT, KC_VOLU, KC_VOLD,           _______, \
- DM_REC2, _______,   WN_UNDO,  WN_CUT, WN_COPY, WN_PASTE,  ATAB_D,       ATAB_I, WN_UP,   WN_DOWN, WN_LEFT, WN_RGHT, KC_MUTE, _______,   _______, \
+ DM_REC1, _______,   KC_F1,  KC_F2,    KC_F4,   KC_F4,   KC_F5,   KC_F6,    KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,  KC_F12,  KC_INS,  KC_DEL, \
+  ATAB_D, _______,   KC_HOME, KC_UP,    KC_END, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_MPLY, KC_MPRV, KC_MNXT,   _______, \
+  ATAB_I, _______,   KC_LEFT,  KC_DOWN, KC_RGHT, XXXXXXX, XXXXXXX,       KC_LEFT, KC_DOWN, KC_UP, KC_RGHT, KC_VOLU, KC_VOLD,             _______, \
+ _______, _______,   WN_UNDO,  WN_CUT, WN_COPY, WN_PASTE, _______,      _______, WN_UP,   WN_DOWN, WN_LEFT, WN_RGHT, KC_MUTE, _______,   _______, \
                      _______, _______,          MO(_CL),                        _______,          _______, _______ \
 ), 
    [_CL] = LAYOUT(\
-  BM_RST,  TOG_OS, BM_HI_1, BM_HI_2, BM_HI_3, BM_HI_4, XXXXXXX, XXXXXXX,    BM_SI,   BM_BI,   BM_FI, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, \
+  BM_RST, XXXXXXX, BM_HI_1, BM_HI_2, BM_HI_3, BM_HI_4, XXXXXXX, XXXXXXX,    BM_SI,   BM_BI,   BM_FI, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, \
  XXXXXXX, XXXXXXX,   BM_HD_1, BM_HD_2, BM_HD_3, BM_HD_4, XXXXXXX,         BM_SD,   BM_BD,   BM_FD, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,   BM_WIPE, \
- XXXXXXX, XXXXXXX,    XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX,  BM_LED, XXXXXXX, XXXXXXX,           XXXXXXX, \
- XXXXXXX, XXXXXXX,   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX,   _______, \
+ XXXXXXX,  TOG_OS,    XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX,  BM_LED, XXXXXXX, XXXXXXX,           XXXXXXX, \
+ _______, XXXXXXX,   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX,   _______, \
                      XXXXXXX, XXXXXXX,          _______,                        _______,          XXXXXXX, XXXXXXX \
 ) };
 
@@ -112,8 +112,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
           is_alt_tab_active = true;
           // Use CMD or ALT depending on OS layer
           switch (biton32(default_layer_state)) {
-            case _BL: register_code(KC_LGUI);
-            case _WL: register_code(KC_LALT);
+            case _WL:
+                    register_code(KC_LALT);
+                    break;
+            case _BL:
+                    register_code(KC_LGUI);
+                    break;
           }
         }
         alt_tab_timer = timer_read();
@@ -148,8 +152,12 @@ void matrix_scan_user(void) {
   if (is_alt_tab_active && timer_elapsed(alt_tab_timer) > 500) {
     is_alt_tab_active = false;
     switch (biton32(default_layer_state)) {
-      case _BL: unregister_code(KC_LGUI);
-      case _WL: unregister_code(KC_LALT);
+      case _WL:
+              unregister_code(KC_LALT);
+              break;
+      case _BL:
+              unregister_code(KC_LGUI);
+              break;
     }
   }
 }
