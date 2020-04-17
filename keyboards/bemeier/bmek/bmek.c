@@ -18,7 +18,7 @@
 #include "../bmledlib.h"
 
 void bm_update_led_indicators(void);
-kb_config_t kb_config;
+kb_config_big_t bmek_config;
 
 // Smooth LED transitions
 enum bmled_smooth_vals {
@@ -38,34 +38,52 @@ static uint32_t idle_timeout = 120000;
 // Config
 static bool settings_dirty = false;
 static uint8_t cfg_layer_idx = 0;
+static bool multiply_speed = false;
 
 // Macros
 static bool recording = false;
 
+
+void bmek_update_config(void) {
+    eeprom_update_dword(EECONFIG_BMEK_0, bmek_config.raw_hue0);
+    eeprom_update_dword(EECONFIG_BMEK_1, bmek_config.raw_hue1);
+    eeprom_update_dword(EECONFIG_BMEK_2, bmek_config.raw_hue2);
+    eeprom_update_dword(EECONFIG_BMEK_3, bmek_config.raw_hue3);
+    eeprom_update_dword(EECONFIG_BMEK_4, bmek_config.raw_bri_sat_fade);
+}
+
+void bmek_read_config(void) {
+    bmek_config.raw_hue0 = eeprom_read_dword(EECONFIG_BMEK_0);
+    bmek_config.raw_hue1 = eeprom_read_dword(EECONFIG_BMEK_1);
+    bmek_config.raw_hue2 = eeprom_read_dword(EECONFIG_BMEK_2);
+    bmek_config.raw_hue3 = eeprom_read_dword(EECONFIG_BMEK_3);
+    bmek_config.raw_bri_sat_fade = eeprom_read_dword(EECONFIG_BMEK_4);
+}
+
 void eeconfig_init_kb(void) {
-  kb_config.raw_kb = 0;
-  kb_config.raw_user = 0;
-  kb_config.layer_hues[0] = 100;
-  kb_config.layer_hues[1] = 120;
-  kb_config.layer_hues[2] = 180;
-  kb_config.layer_hues[3] = 210;
-  kb_config.brightness = 255;
-  kb_config.saturation = 255;
-  kb_config.fade_span = 25;
-  eeconfig_update_kb(kb_config.raw_kb);
-  eeconfig_update_user(kb_config.raw_user);
+  bmek_config.raw_hue0 = 0;
+  bmek_config.raw_hue1 = 0;
+  bmek_config.raw_hue2 = 0;
+  bmek_config.raw_hue3 = 0;
+  bmek_config.raw_bri_sat_fade = 0;
+  bmek_config.layer_hues[0] = 100.0;
+  bmek_config.layer_hues[1] = 120.0;
+  bmek_config.layer_hues[2] = 180.0;
+  bmek_config.layer_hues[3] = 210.0;
+  bmek_config.brightness = 255;
+  bmek_config.saturation = 255;
+  bmek_config.fade_span = 25;
+  bmek_update_config();
 }
 
 void matrix_init_kb(void) {
   // idle timer (turns of lights after idle_timeout ms)
-  kb_config.raw_kb = eeconfig_read_kb();
-  kb_config.raw_user = eeconfig_read_user();
-  idle_timer = timer_read32();
+  bmek_read_config();
 
   // Setup smoothing engine
-  bmled_smooth_init(smooth_brightness, 0, kb_config.brightness, 0, 255, 0.2, false);
-  bmled_smooth_init(smooth_saturation, 0, kb_config.saturation, 0, 255, 0.3, false);
-  bmled_smooth_init(smooth_layer_hue, 0, kb_config.layer_hues[eeconfig_read_default_layer()], 1, 255, 0.25, true);
+  bmled_smooth_init(smooth_brightness, 0, (float) bmek_config.brightness, 0, 255, 0.2, false);
+  bmled_smooth_init(smooth_saturation, 0, (float) bmek_config.saturation, 0, 255, 0.3, false);
+  bmled_smooth_init(smooth_layer_hue, 0, bmek_config.layer_hues[eeconfig_read_default_layer()], 1, 255, 0.25, true);
   rgblight_enable_noeeprom();
   return matrix_init_user();
 }
@@ -100,6 +118,12 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 
   // Config keycodes
   switch (keycode) {
+    case BM_MULT: // FASTER CONFIG CHANGES
+      if (record->event.pressed)
+        multiply_speed = true;
+      else
+        multiply_speed = false;
+      break;
     case BM_LED: // TOGGLE LEDS
       if (record->event.pressed) break;
       leds_enabled = !leds_enabled;
@@ -117,27 +141,31 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
       break;
 	case BM_HI_1 ... BM_HD_4: // SET LAYER COLORS
       settings_dirty = true;
-      int delta = 1;
+      float delta = 0.25;
+      if (multiply_speed) delta = delta * 10;
       cfg_layer_idx = keycode - BM_HI_1;
-      if (keycode > BM_HI_4) {
+      if (keycode >= BM_HD_1) {
         delta = -delta;
         cfg_layer_idx = keycode - BM_HD_1;
       }
-      uint8_t new_val = (kb_config.layer_hues[cfg_layer_idx] + delta) % 255;
-      kb_config.layer_hues[cfg_layer_idx] = new_val;
+      float new_val = fmod((bmek_config.layer_hues[cfg_layer_idx] + delta), 255.0);
+      bmek_config.layer_hues[cfg_layer_idx] = new_val;
       break;
     case BM_SI ... BM_FD: // BRIGHTNESS, SATURATION & INDICATOR FADE
 	  settings_dirty = true;
-	  int delta_sb = 2;
+	  int delta_sb = 1;
+      if (multiply_speed) delta = delta * 10;
       if (keycode == BM_BI) bmled_smooth_add_target(smooth_brightness,  delta_sb);
       if (keycode == BM_BD) bmled_smooth_add_target(smooth_brightness, -delta_sb);
       if (keycode == BM_SI) bmled_smooth_add_target(smooth_saturation,  delta_sb);
       if (keycode == BM_SD) bmled_smooth_add_target(smooth_saturation, -delta_sb);
-      kb_config.brightness = bmled_get_target(smooth_brightness);
-      kb_config.saturation = bmled_get_target(smooth_saturation);
-      if (keycode == BM_FI) kb_config.fade_span += delta_sb;
-      if (keycode == BM_FD) kb_config.fade_span -= delta_sb;
-	  kb_config.fade_span = (uint8_t) fmax(fmin(kb_config.fade_span, 169), 0);
+      bmek_config.brightness = bmled_get_target(smooth_brightness);
+      bmek_config.saturation = bmled_get_target(smooth_saturation);
+      if (keycode == BM_FI && bmek_config.fade_span < 255)
+        bmek_config.fade_span += delta_sb;
+      if (keycode == BM_FD && bmek_config.fade_span > 0)
+        bmek_config.fade_span -= delta_sb;
+	  bmek_config.fade_span = (uint8_t) fmax(fmin(bmek_config.fade_span, 255), 0);
 	  break;
   }
 
@@ -151,32 +179,31 @@ void bm_update_led_indicators(void) {
   if (recording) {
 	// Do nothing, target is updated below...
   } else if (hl > hdl && hl <= 3) { // only first 4 layers supported since we cant store more than 4 bytes of hue data in eeprom easily(?)
-    bmled_smooth_set_target(smooth_layer_hue, kb_config.layer_hues[hl]);
-    bmled_smooth_set_target(smooth_saturation, kb_config.saturation);
+    bmled_smooth_set_target_f(smooth_layer_hue, bmek_config.layer_hues[hl]);
+    bmled_smooth_set_target(smooth_saturation, bmek_config.saturation);
   } else if (hdl <= 3 && hl < 3) {
-    bmled_smooth_set_target(smooth_layer_hue, kb_config.layer_hues[hdl]);
-    bmled_smooth_set_target(smooth_saturation, kb_config.saturation);
+    bmled_smooth_set_target_f(smooth_layer_hue, bmek_config.layer_hues[hdl]);
+    bmled_smooth_set_target(smooth_saturation, bmek_config.saturation);
     if (settings_dirty) {
       settings_dirty = false;
-      eeconfig_update_kb(kb_config.raw_kb);
-      eeconfig_update_user(kb_config.raw_user);
+      bmek_update_config();
     }
   } else { // If on a higher layer, we assume it's the config layer and instead we show the currently configured hue:
-    bmled_set(smooth_layer_hue, kb_config.layer_hues[cfg_layer_idx]);
-    bmled_set(smooth_saturation, kb_config.saturation);
+    bmled_smooth_set_target(smooth_layer_hue, bmek_config.layer_hues[cfg_layer_idx]);
+    bmled_smooth_set_target(smooth_saturation, bmek_config.saturation);
   }
 
   if (leds_enabled && bmled_smooth_update()) {
-    uint8_t span = kb_config.fade_span;
+    float span = (float) bmek_config.fade_span / 1.55;
 	if (recording) {
 	  bmled_smooth_add_target(smooth_layer_hue, 7);
 	  span = 64;
     } 
 
-	uint8_t current_hue = bmled_get_val(smooth_layer_hue);
+	uint8_t current_hue = bmled_get_val_f(smooth_layer_hue);
     int half_leds = RGBLED_NUM/2;
 	for (int i = 0; i < half_leds; i++) {
-		uint8_t this_hue = current_hue - span * i/(RGBLED_NUM/2) % 255;
+		uint8_t this_hue = (uint8_t) (current_hue - span * fmod((float) i / (RGBLED_NUM/2.0), 255.0));
     	rgblight_sethsv_at(this_hue, bmled_get_val(smooth_saturation), bmled_get_val(smooth_brightness), i);
     	rgblight_sethsv_at(this_hue, bmled_get_val(smooth_saturation), bmled_get_val(smooth_brightness), i+half_leds);
 	}
@@ -191,7 +218,7 @@ void bm_update_led_indicators(void) {
           idle = true;
         }
     } else if (!idle) {
-      bmled_smooth_set_target(smooth_brightness, kb_config.brightness);
+      bmled_smooth_set_target(smooth_brightness, bmek_config.brightness);
     }
   }
 }

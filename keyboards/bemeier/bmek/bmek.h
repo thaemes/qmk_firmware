@@ -21,18 +21,28 @@
 #include "quantum.h"
 //#include "dynamic_macro.h"
 
+#define EECONFIG_BMEK_0 (uint32_t *) 36
+#define EECONFIG_BMEK_1 (uint32_t *) 40
+#define EECONFIG_BMEK_2 (uint32_t *) 44
+#define EECONFIG_BMEK_3 (uint32_t *) 48
+#define EECONFIG_BMEK_4 (uint32_t *) 52
+
 typedef union {
   struct {
-    uint32_t raw_kb;
-    uint32_t raw_user;
+    uint32_t raw_hue0;
+    uint32_t raw_hue1;
+    uint32_t raw_hue2;
+    uint32_t raw_hue3;
+    uint32_t raw_bri_sat_fade;
   };
   struct {
-    uint8_t layer_hues[4];
+    float layer_hues[4];
     uint8_t brightness;
     uint8_t saturation;
 	uint8_t fade_span;
+    uint8_t unused;
   };
-} kb_config_t;
+} kb_config_big_t;
 
 enum bm_keycodes {
   BM_RST = SAFE_RANGE,
@@ -52,6 +62,7 @@ enum bm_keycodes {
   BM_BD,
   BM_FI,
   BM_FD,
+  BM_MULT,
   BM_SAFE_RANGE
 };
 

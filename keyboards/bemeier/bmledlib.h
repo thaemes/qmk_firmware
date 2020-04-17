@@ -39,21 +39,25 @@ typedef struct {
 static uint16_t bmled_smooth_last_update;
 
 uint8_t bmled_get_val(uint8_t val);
-void bmled_smooth_init(uint8_t val, uint8_t start_val, uint8_t start_target, uint8_t min, uint8_t max, float param, bool wrap);
+float bmled_get_val_f(uint8_t val);
+void bmled_smooth_init(uint8_t val, uint8_t start_val, float start_target, uint8_t min, uint8_t max, float param, bool wrap);
 void bmled_smooth_add_target(uint8_t val, int add);
+void bmled_smooth_add_target_f(uint8_t val, float add);
 void bmled_smooth_set_target(uint8_t val, uint8_t target);
+void bmled_smooth_set_target_f(uint8_t val, float target);
 void bmled_set(uint8_t val, uint8_t target);
+void bmled_set_f(uint8_t val, float target);
 float bmled_get_dist(uint8_t val);
 bool bmled_smooth_update(void);
 
 bmled_smooth bmled_smooth_vals[BMLED_SMOOTH_NVALS];
 
 // Initialize a smooth value
-void bmled_smooth_init(uint8_t val, uint8_t start_val, uint8_t start_target, uint8_t min, uint8_t max, float param, bool wrap) {
+void bmled_smooth_init(uint8_t val, uint8_t start_val, float start_target, uint8_t min, uint8_t max, float param, bool wrap) {
   if (val >= BMLED_SMOOTH_NVALS) return;
   bmled_smooth_last_update = timer_read();
   bmled_smooth_vals[val].current_value = (float) start_val;
-  bmled_smooth_vals[val].target_value = (float) start_target;
+  bmled_smooth_vals[val].target_value = start_target;
   bmled_smooth_vals[val].min_value = (float) min;
   bmled_smooth_vals[val].max_value = (float) max;
   bmled_smooth_vals[val].smooth_param = param;
@@ -84,6 +88,10 @@ bool bmled_smooth_update(void) {
 }
 
 void bmled_smooth_add_target(uint8_t val, int add) {
+  bmled_smooth_add_target_f(val, (float) add);
+}
+
+void bmled_smooth_add_target_f(uint8_t val, float add) {
   if (val >= BMLED_SMOOTH_NVALS) return;
   float new_val = bmled_smooth_vals[val].target_value + add;
   if (bmled_smooth_vals[val].wrap_around_fade) {
@@ -96,23 +104,36 @@ void bmled_smooth_add_target(uint8_t val, int add) {
 }
 
 void bmled_set(uint8_t val, uint8_t target) {
+    bmled_set_f(val, (float) target);
+}
+
+void bmled_set_f(uint8_t val, float target) {
   if (val >= BMLED_SMOOTH_NVALS) return;
   if (target > bmled_smooth_vals[val].max_value) bmled_smooth_vals[val].current_value = bmled_smooth_vals[val].max_value;
   else if (target < bmled_smooth_vals[val].min_value) bmled_smooth_vals[val].current_value = bmled_smooth_vals[val].min_value;
-  else bmled_smooth_vals[val].current_value = (float) target;
+  else bmled_smooth_vals[val].current_value = target;
   bmled_smooth_vals[val].target_value = bmled_smooth_vals[val].current_value;
 }
 
 void bmled_smooth_set_target(uint8_t val, uint8_t target) {
+    bmled_smooth_set_target_f(val, (float) target);
+}
+    
+void bmled_smooth_set_target_f(uint8_t val, float target) {
   if (val >= BMLED_SMOOTH_NVALS) return;
   if (target > bmled_smooth_vals[val].max_value) bmled_smooth_vals[val].target_value = bmled_smooth_vals[val].max_value;
   else if (target < bmled_smooth_vals[val].min_value) bmled_smooth_vals[val].target_value = bmled_smooth_vals[val].min_value;
-  else bmled_smooth_vals[val].target_value = (float) target;
+  else bmled_smooth_vals[val].target_value = target;
+}
+
+
+float bmled_get_target_f(uint8_t val) {
+  if (val >= BMLED_SMOOTH_NVALS) return 0;
+  return bmled_smooth_vals[val].target_value;
 }
 
 uint8_t bmled_get_target(uint8_t val) {
-  if (val >= BMLED_SMOOTH_NVALS) return 0;
-  return (uint8_t) bmled_smooth_vals[val].target_value;
+  return (uint8_t) bmled_get_target_f(val);
 }
 
 float bmled_get_dist(uint8_t val) {
@@ -125,6 +146,10 @@ float bmled_get_dist(uint8_t val) {
 }
 
 uint8_t bmled_get_val(uint8_t val) {
-  if (val >= BMLED_SMOOTH_NVALS) return 0;
-  return (uint8_t) bmled_smooth_vals[val].current_value;
+  return (uint8_t) bmled_get_val_f(val);
+}
+
+float bmled_get_val_f(uint8_t val) {
+  if (val >= BMLED_SMOOTH_NVALS) return 0.0;
+  return bmled_smooth_vals[val].current_value;
 }
